@@ -12,7 +12,7 @@ maxTimeSteps   20000
 goalX           310
 goalY           245
 writeDataSkip  10
-dataFilenameBase   ../../data/asdf
+dataFilenameBase   ../../data
 numTrials		50
 controllerSkip  2
 arenaConfig     sim_stadium_one_wall
