@@ -1,0 +1,25 @@
+{
+    "files.associations": {
+        "functional": "cpp",
+        "cmath": "cpp",
+        "tuple": "cpp",
+        "cstddef": "cpp",
+        "limits": "cpp",
+        "array": "cpp",
+        "bitset": "cpp",
+        "deque": "cpp",
+        "forward_list": "cpp",
+        "list": "cpp",
+        "map": "cpp",
+        "*.tcc": "cpp",
+        "set": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp",
+        "vector": "cpp",
+        "bit": "cpp",
+        "ostream": "cpp",
+        "complex": "cpp"
+    },
+    "python.pythonPath": "/home/av/.pyenv/versions/3.8.2/bin/python"
+}

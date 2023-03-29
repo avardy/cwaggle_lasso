@@ -1,0 +1,6 @@
+*.o
+*.pyc
+*.exe
+*.DS_Store
+*.pdf
+*.dat

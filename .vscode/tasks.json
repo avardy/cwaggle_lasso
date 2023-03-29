@@ -1,0 +1,38 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build with Makefile",
+            "type": "shell",
+            "command": "",
+            "args": [
+                "make",
+                "-B",
+                "--directory=${workspaceFolder}/cwaggle;"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "Execute cwaggle_lasso",
+            "type": "shell",
+            "command": "${workspaceFolder}/cwaggle/bin/cwaggle_lasso",
+            "options": {
+                "cwd": "${workspaceFolder}/cwaggle/bin"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always"
+            },
+            "problemMatcher": []
+        }
+    ]
+}
