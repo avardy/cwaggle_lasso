@@ -21,7 +21,7 @@ class GUI {
     bool m_sensors = false;
     bool m_drawLines = true, m_drawCircles = true;
 //    size_t m_controlsHeight = 150;
-    size_t m_controlsHeight = 0;
+    size_t m_controlsHeight = 120;
     size_t m_windowWidth;
     size_t m_windowHeight;
 
@@ -507,6 +507,11 @@ public:
     void close()
     {
         m_window.close();
+    }
+
+    bool isOpen() const
+    {
+        return m_window.isOpen();
     }
 
     void updateGridImage(int gridIndex, bool red, bool green, bool blue)

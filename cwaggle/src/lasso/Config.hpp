@@ -29,6 +29,7 @@ struct Config
     size_t writeDataSkip    = 0;
     std::string dataFilenameBase   = "";
     size_t numTrials = 10;
+    size_t startTrialIndex = 0;
     std::string evalName = "";
 
     size_t captureScreenshots          = 0;
@@ -83,6 +84,7 @@ struct Config
             else if (token == "writeDataSkip")  { fin >> writeDataSkip; }
             else if (token == "dataFilenameBase")   { fin >> dataFilenameBase; }
             else if (token == "numTrials")   { fin >> numTrials; }
+            else if (token == "startTrialIndex")   { fin >> startTrialIndex; }
             else if (token == "evalName")   { fin >> evalName; }
             else if (token == "captureScreenshots")   { fin >> captureScreenshots; }
             else if (token == "screenshotFilenameBase")   { fin >> screenshotFilenameBase; }

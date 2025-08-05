@@ -14,15 +14,15 @@
 
 using namespace std;
 
-double singleExperiment(Config config)
+double singleExperiment(Config config, bool waitAfterCompletion = false)
 {
     double avgEval = 0;
-    for (int i = 0; i < config.numTrials; i++) {
+    for (int i = config.startTrialIndex; i < config.startTrialIndex + config.numTrials; i++) {
         cerr << "Trial: " << i << "\n";
 
         // We use i + 1 for the RNG seed because seeds of 0 and 1 seem to generate the
         // same result.
-        MyExperiment exp(config, i, i + 1);
+        MyExperiment exp(config, i, i + 1, waitAfterCompletion);
         exp.run();
         if (exp.wasAborted())
             cerr << "Trial aborted." << "\n";
@@ -35,7 +35,7 @@ double singleExperiment(Config config)
     return avgEval / config.numTrials;
 }
 
-void paramSweep(Config config)
+void paramSweep(Config config, bool waitAfterCompletion = false)
 {
     // You should just configure the following four lines.
     using choiceType = size_t;
@@ -53,7 +53,7 @@ void paramSweep(Config config)
         *choiceVariable = choice;
 
         cout << choiceName << ": " << choice << endl;
-        double avgEval = singleExperiment(config);
+        double avgEval = singleExperiment(config, waitAfterCompletion);
         sweepResults.push_back(make_pair(choice, avgEval));
     }
 
@@ -74,15 +74,15 @@ void paramSweep(Config config)
     */
 }
 
-void runParamOrSingle(Config config)
+void runParamOrSingle(Config config, bool waitAfterCompletion = false)
 {
     if (config.paramSweep)
-        paramSweep(config);
+        paramSweep(config, waitAfterCompletion);
     else
-        singleExperiment(config);
+        singleExperiment(config, waitAfterCompletion);
 }
 
-void arenaSweep(Config config)
+void arenaSweep(Config config, bool waitAfterCompletion = false)
 {
     string choiceName = "arenaConfig";
     vector<string> arenas{ "sim_stadium_no_wall", "sim_stadium_one_wall", "sim_stadium_two_walls", "sim_stadium_three_walls" };
@@ -98,14 +98,19 @@ void arenaSweep(Config config)
         if (mkdir(config.dataFilenameBase.c_str(), 0777) == -1 && errno != EEXIST)
             cerr << "Error creating directory: " << config.dataFilenameBase << endl;
 
-        runParamOrSingle(config);
+        runParamOrSingle(config, waitAfterCompletion);
     }
 }
 
 int main(int argc, char** argv)
 {
-    if (argc != 1) {
-        cerr << "Usage\n\tcwaggle_lasso NO_ARGUMENTS_PLEASE" << endl;
+    bool waitAfterCompletion = false;
+    
+    if (argc == 2 && string(argv[1]) == "--wait") {
+        waitAfterCompletion = true;
+    } else if (argc != 1) {
+        cerr << "Usage\n\tcwaggle_lasso [--wait]" << endl;
+        cerr << "\t--wait: Wait for user input before exiting" << endl;
         return -1;
     }
 
@@ -115,9 +120,9 @@ int main(int argc, char** argv)
     config.load(configFile);
 
     if (config.arenaSweep)
-        arenaSweep(config);
+        arenaSweep(config, waitAfterCompletion);
     else
-        runParamOrSingle(config);
+        runParamOrSingle(config, waitAfterCompletion);
 
     return 0;
 }

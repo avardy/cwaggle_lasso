@@ -4,6 +4,9 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <iostream>
+#include <thread>
+#include <chrono>
 
 #include "CWaggle.h"
 #include "GUI.hpp"
@@ -34,16 +37,18 @@ class MyExperiment {
 
     default_random_engine m_rng;
     bool m_aborted;
+    bool m_waitAfterCompletion;
 
     SpeedManager m_speedManager;
     DataLogger m_dataLogger;
 
 public:
-    MyExperiment(Config config, int trialIndex, int rngSeed)
+    MyExperiment(Config config, int trialIndex, int rngSeed, bool waitAfterCompletion = false)
         : m_config(config)
         , m_trialIndex(trialIndex)
         , m_rng(rngSeed)
         , m_aborted(false)
+        , m_waitAfterCompletion(waitAfterCompletion)
         , m_speedManager(config)
         , m_dataLogger(config, trialIndex)
     {
@@ -57,8 +62,8 @@ public:
 
         m_speedManager.incrementStepCount();
 
-        if (!m_gui && (m_speedManager.getStepCount() % 10000 == 0)) {
-            //cout << "Simulation Step: " << m_speedManager.getStepCount() << "\n";
+        if (!m_gui && (m_speedManager.getStepCount() % 5000 == 0)) {
+            cout << "Simulation Step: " << m_speedManager.getStepCount() << " / " << m_config.maxTimeSteps << "\n";
         }
 
         for (auto& robot : m_sim->getWorld()->getEntities("robot")) {
@@ -101,7 +106,11 @@ public:
 
             if (m_gui) {
                 m_status = stringstream();
-                m_status << "Step: " << m_speedManager.getStepCount() << endl;
+                m_status << "Step: " << m_speedManager.getStepCount();
+                if (m_config.maxTimeSteps > 0) {
+                    m_status << " / " << m_config.maxTimeSteps;
+                }
+                m_status << endl;
                 m_status << "Eval: " << m_eval << endl;
                 m_status << "Prop Slowed: " << m_propSlowed << endl;
                 m_status << "Cum Prop Slowed: " << m_cumPropSlowed << endl;
@@ -157,8 +166,22 @@ public:
             // resetSimulator();
         }
 
+        // Display final step count
+        std::cout << "Simulation completed at step: " << m_speedManager.getStepCount() << std::endl;
+
         if (m_gui) {
-            m_gui->close();
+            if (m_waitAfterCompletion) {
+                // Keep the GUI open and wait for user to close the window
+                std::cout << "\nSimulation complete. Close the window or press ESC to exit..." << std::endl;
+                
+                while (m_gui && m_gui->isOpen()) {
+                    m_gui->update();
+                    // Small delay to prevent excessive CPU usage
+                    std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
+                }
+            } else {
+                m_gui->close();
+            }
             m_gui = NULL;
         }
     }
