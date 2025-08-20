@@ -9,7 +9,7 @@
 #include "../lasso/MyExperiment.hpp"
 #include "../lasso/Config.hpp"
 //#include "../lasso/LassoController.hpp"
-#include "../lasso/SimplifiedLassoController.hpp"
+#include "../lasso/LassoController.hpp"
 #include "../lasso/MyEval.hpp"
 #include "../lasso/worlds.hpp"
 

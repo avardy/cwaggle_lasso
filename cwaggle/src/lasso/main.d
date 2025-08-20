@@ -80,7 +80,7 @@ src/lasso/main.o: src/lasso/main.cpp include/CWaggle.h include/Vec2.hpp \
   include/EntityManager.hpp include/Simulator.hpp include/GUI.hpp \
   include/SensorTools.hpp include/Sensors.hpp \
   include/KeyboardCallback.hpp src/lasso/MyExperiment.hpp \
-  src/lasso/MyEval.hpp src/lasso/SimplifiedLassoController.hpp \
+  src/lasso/MyEval.hpp src/lasso/LassoController.hpp \
   include/EntityControllers.hpp include/EntityAction.hpp \
   src/lasso/TrackedSensor.hpp src/lasso/Config.hpp src/utils/Angles.h \
   src/utils/Intersect.h src/lasso/worlds.hpp include/WorldUtils.hpp \
@@ -177,7 +177,7 @@ include/Sensors.hpp:
 include/KeyboardCallback.hpp:
 src/lasso/MyExperiment.hpp:
 src/lasso/MyEval.hpp:
-src/lasso/SimplifiedLassoController.hpp:
+src/lasso/LassoController.hpp:
 include/EntityControllers.hpp:
 include/EntityAction.hpp:
 src/lasso/TrackedSensor.hpp:

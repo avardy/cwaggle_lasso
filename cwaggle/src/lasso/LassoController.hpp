@@ -1,9 +1,17 @@
 #pragma once
 
+/*
+
+Forked from LassoController.hpp to exclude experimental features such as 
+task completion detection and the various forms of "blindness". This version
+adds getSGFstate().
+
+*/
+
+
 #include "CWaggle.h"
 #include "EntityControllers.hpp"
 #include "TrackedSensor.hpp"
-#include "DigitalFilters.h"
 #include "SensorTools.hpp"
 #include "Config.hpp"
 #include <math.h>
@@ -32,31 +40,6 @@ public:
     }
 };
 
-// These states were an attempt at judging task completion.
-enum class State {NORMAL, SATISFIED, AT_BORDER, STOPPED};
-
-ostream& operator<< (ostream& out, State& state)
-{
-    switch(state) {
-        case State::NORMAL:     out << "NORMAL"; break;
-        case State::SATISFIED:  out << "SATISFIED"; break;
-        case State::AT_BORDER:  out << "AT_BORDER"; break;
-        case State::STOPPED:    out << "STOPPED"; break;
-    }
-    return out;
-}
-
-CColor toColor(State& state)
-{
-    switch(state) {
-        case State::NORMAL:     return CColor(127, 127, 127, 127); break;
-        case State::SATISFIED:  return CColor(127, 255, 127, 127); break;
-        case State::AT_BORDER:  return CColor(127, 127, 255, 127); break;
-        case State::STOPPED:    return CColor(227, 227, 227, 127); break;
-    }
-}
-
-
 class LassoController : public EntityController
 {
     std::shared_ptr<World> m_world;
@@ -73,31 +56,10 @@ class LassoController : public EntityController
     uniform_real_distribution<double> m_escapeNoiseDistV;
     uniform_real_distribution<double> m_escapeNoiseDistW;
 
-    uniform_real_distribution<double> m_blindResetDist;
-    uniform_real_distribution<double> m_blindTauDist;
-
 public:
     // m_tau represents the isoline the robot is trying to follow.  It is retained as
     // the only piece of state information in between calls to getAction.
     double m_tau = 0.5;
-
-    double m_medianTau = 0.5;
-
-    double m_filteredTau = 0;
-
-    // If m_config.controllerState is true then we will retain this addtional state
-    // variable which tracks completion of the construction task, movement of all robots to the border,
-    // then stopping behind the first robot that detects the starting line of the second scalar field.
-    State m_state = State::NORMAL;
-//private:
-
-    int m_laps = 0;
-    double m_lastStartBar = 0;
-
-    double m_sampleTime;
-    HighPassFilter3 m_highPassFilter;
-
-    vector<double> m_tauDuringLoop;
 
     int m_escapeCountdown = 0;
 
@@ -127,10 +89,6 @@ public:
         , m_indicator(3.14, 20, 255, 0, 0, 255)
         , m_escapeNoiseDistV(-0.5, 0.1)
         , m_escapeNoiseDistW(-0.5, 0.5)
-        , m_blindResetDist(0, 1.0)
-        , m_blindTauDist(m_world->getGrid(0).getMinimumAbove(0), m_world->getGrid(0).getMaximumBelow(1))
-        , m_sampleTime(0.01)
-        , m_highPassFilter(m_sampleTime, 2.0 * M_PI * m_config.filterConstant)
     {
         m_robotPos = m_robot.getComponent<CTransform>().p;
         m_positionQueue.push(m_robotPos);
@@ -141,9 +99,6 @@ public:
         m_robotPos = m_robot.getComponent<CTransform>().p;
         SensorTools::ReadSensorArray(m_robot, m_world, m_reading);
 
-        if (!m_config.controllerState) {
-
-            // The algorithm without state (i.e. with no stopping criterion).
             computeTau();
 
             m_v = 0;
@@ -152,55 +107,6 @@ public:
             slowOrStop();
             escapeIfStuck();
 
-        } else {
-            // The algorithm with state (i.e. with a stopping criterion).
-        
-            // First determine if we've just hit the start bar.  If so, we apply some filtering
-            // on the raw tau values that were encountered during this past "lap" and change
-            // state from NORMAL to SATISFIED if the task seems to be completed (indicated by
-            // a positive zero-crossing of the high-pass filter response).
-            double startBar = m_world->getGrid(1).get(round(m_robotPos.x), round(m_robotPos.y));
-            bool hitStartBar = startBar < 0.1 && m_lastStartBar > 0.9;
-            if (hitStartBar) {
-                m_laps++;
-
-                std::sort(m_tauDuringLoop.begin(), m_tauDuringLoop.end());
-                if (m_tauDuringLoop.size() > 0)
-                    m_medianTau = m_tauDuringLoop[m_tauDuringLoop.size() / 2];
-
-                double m_lastFilteredTau = m_highPassFilter.getOutput();
-                m_filteredTau = m_highPassFilter.update(m_medianTau);
-                /* DISABLE THIS SECTION TO DISABLE STATE CHANGES (e.g. FOR SHOWING THE FILTERING) */
-                if (m_state == State::NORMAL && m_lastFilteredTau < 0 && m_filteredTau > 0) {
-                    m_state = State::SATISFIED;
-                    m_tau = 1.0;
-                }
-                /**/
-                m_tauDuringLoop.clear();
-            }
-            m_lastStartBar = startBar;
-
-            if (m_state == State::NORMAL)
-                computeTau();
-
-            m_tauDuringLoop.push_back(m_tau);
-
-            m_v = 0;
-            m_w = 0;
-            if (m_state != State::STOPPED)
-                computeSpeeds();
-
-            if (m_state == State::SATISFIED && !m_targetValid)
-                m_state = State::AT_BORDER;
-
-            slowOrStop();
-            if (m_state == State::AT_BORDER && hitStartBar)
-                m_state = State::STOPPED;
-
-            if (m_state == State::NORMAL || m_state == State::SATISFIED)
-                escapeIfStuck();
-        }
-
         if (m_escapeCountdown > 0)
             --m_escapeCountdown;
 
@@ -208,19 +114,22 @@ public:
         // Debug / visualization
         //
 
-        m_robot.addComponent<CColor>(toColor(m_state));
+        int sgf = getSGFstate();
+        if (sgf == 0)
+            m_robot.addComponent<CColor>(CColor(100, 100, 255, 127));
+        else if (sgf == 1)
+            m_robot.addComponent<CColor>(CColor(100, 255, 100, 127));
+        else if (sgf == 2)
+            m_robot.addComponent<CColor>(CColor(255, 200, 0, 127));
+
         if (m_robot.getComponent<CControllerVis>().selected) {
             auto &visGrid = m_world->getGrid(5);
             visGrid.addContour(m_tau, m_world->getGrid(0), 1.0);
 
             std::stringstream ss;
-            ss << "state: \t" << m_state << endl
-               << "laps: \t" << m_laps << endl
-               << "slow: \t" << m_slow << endl
+            ss << "slow: \t" << m_slow << endl
                << "stop: \t" << m_stop << endl
                << "tau: \t" << m_tau << endl
-               << "medianTau: \t" << m_medianTau << endl
-               << "filteredTau: \t" << m_filteredTau << endl
                << "v, w: \t" << m_v << ", " << m_w << endl;
             m_visComponent.msg = ss.str();
         }
@@ -242,44 +151,43 @@ public:
         return m_previousAction;
     }
 
-    int getStateAsInt() {
-        return static_cast<std::underlying_type<State>::type>(m_state);
+    // Return 0, 1, or 2 to indicate the robot's state according to the SGF
+    // model of Hamann and Reina:
+    // 
+    // Heiko Hamann and Andreagiovanni Reina. Scalability in computing and
+    // robotics. IEEE Transactions on Computers, 71(6):1453–1465, 2021.
+    //
+    // 0: We interpret the robot as being in the "solo" state, meaning
+    // that the robot is operating without interference from other robots.
+    //
+    // 1: We interpret the robot as being in the "grupo" state. It is in
+    // contact with other robots, which are likely interfering with it.
+    //
+    // 2: We interpret the robot as being in the "fermo" state. The robot is
+    // currently stuck and cannot meaningfully contribute to the task.
+    int getSGFstate() {
+        // To interpret as "fermo" we rely on the simulator itself, which sets
+        // "slowedCount" to a non-zero value if the robot has hit another robot
+        // or the border.
+        auto & steer = m_robot.getComponent<CSteer>();
+        if (steer.slowedCount > 0)
+            return 2;
+        else if (m_slow || m_stop)
+            return 1;
+        else
+            return 0;
     }
 
 private:
 
     void computeTau()
     {
-        if (m_config.controllerBlindness == 1) {
-            // BLIND CONTROLLER (VARIANT 1): If tau has not been set before, or with a small probability,
-            // set tau randomly.
-            if (m_tau == 0.5 || m_blindResetDist(m_rng) < 0.001) {
-                m_tau = m_blindTauDist(m_rng);
-            }
-        } else if (m_config.controllerBlindness == 2) {
-            // BLIND CONTROLLER (VARIANT 2): If tau has not been set before, or with a small probability,
-            // set tau to a randomly selected scalar field in the range (0, 1).
-            if (m_tau == 0.5 || m_blindResetDist(m_rng) < 0.001) {
-                bool foundValid = false;
-                uniform_int_distribution<int> Xrng(0, m_world->width());
-                uniform_int_distribution<int> Yrng(0, m_world->height());
-                while (!foundValid) {
-                    m_tau = m_world->getGrid(0).get(Xrng(m_rng), Yrng(m_rng));
-                    foundValid = m_tau > 0 && m_tau < 1;
-                }
-            }
-        } else {
-            // NORMAL CASE: Controller is not blinded in any way.
-            bool puckValid = false;
-            double puckValue = m_trackedSensor.getExtreme(m_world, m_robot, "red_puck", SensorOp::GET_MAX_DTG,
-                                                    0, 1, m_config.puckSensingDistance, puckValid);
+        bool puckValid = false;
+        double puckValue = m_trackedSensor.getExtreme(m_world, m_robot, "red_puck", SensorOp::GET_MAX_DTG,
+                                                0, 1, m_config.puckSensingDistance, puckValid);
 
-            if (puckValid)
-                m_tau = puckValue;
-        }
-
-//m_tau *= 0.9995;
-        //m_tauConflict = m_tau < lowerRobotValue || m_tau > upperRobotValue;
+        if (puckValid)
+            m_tau = puckValue;
     }
 
     void computeSpeeds() 

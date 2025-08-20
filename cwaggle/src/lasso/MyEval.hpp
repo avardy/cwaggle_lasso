@@ -3,7 +3,7 @@
 #include "World.hpp"
 #include "Entity.hpp"
 #include "Components.hpp"
-#include "SimplifiedLassoController.hpp"
+#include "LassoController.hpp"
 
 namespace LassoEval
 {
@@ -196,7 +196,7 @@ namespace LassoEval
         int total = 0;
         for (auto& robot : world->getEntities("robot")) {
             // Ugly!
-            std::shared_ptr<SimplifiedLassoController> lassoCtrl = std::dynamic_pointer_cast<SimplifiedLassoController>(robot.getComponent<CController>().controller);
+            std::shared_ptr<LassoController> lassoCtrl = std::dynamic_pointer_cast<LassoController>(robot.getComponent<CController>().controller);
 
             int sgf = lassoCtrl->getSGFstate();
             if (sgf == 0)

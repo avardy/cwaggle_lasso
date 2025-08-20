@@ -13,7 +13,7 @@
 
 #include "Config.hpp"
 //#include "LassoController.hpp"
-#include "SimplifiedLassoController.hpp"
+#include "LassoController.hpp"
 
 using namespace std;
 
@@ -52,7 +52,7 @@ public:
         // double n = 0;
         // for (auto& robot : world->getEntities("robot")) {
         //     // Ugly!
-        //     std::shared_ptr<SimplifiedLassoController> lassoCtrl = std::dynamic_pointer_cast<SimplifiedLassoController>(robot.getComponent<CController>().controller);
+        //     std::shared_ptr<LassoController> lassoCtrl = std::dynamic_pointer_cast<LassoController>(robot.getComponent<CController>().controller);
         //     avgTau += lassoCtrl->m_tau;
         //     ++n;
         // }
@@ -68,7 +68,7 @@ public:
         for (auto& robot : world->getEntities("robot")) {
             Vec2& pos = robot.getComponent<CTransform>().p;
             CSteer& steer = robot.getComponent<CSteer>();
-            std::shared_ptr<SimplifiedLassoController> lassoCtrl = std::dynamic_pointer_cast<SimplifiedLassoController>(robot.getComponent<CController>().controller);
+            std::shared_ptr<LassoController> lassoCtrl = std::dynamic_pointer_cast<LassoController>(robot.getComponent<CController>().controller);
             m_robotPoseStream << " " << (int)pos.x << " " << (int)pos.y << " " << ((int)(1000 * steer.angle)) / 1000.0; // Rounding angle to 3 decimals
             m_robotStateStream << " " << lassoCtrl->getSGFstate();
         }

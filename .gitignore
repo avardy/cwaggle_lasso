@@ -1,5 +1,24 @@
+# Object files and build artifacts
 *.o
+*.a
+*.so
+*.dylib
+*.d
+
+# Python
 *.pyc
+__pycache__/
+
+# Executables
 *.exe
+cwaggle/bin/cwaggle_lasso
+
+# macOS
 *.DS_Store
+
+# Documentation and output files
 *.pdf
+
+# Build directories
+build/
+dist/

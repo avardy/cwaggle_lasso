@@ -4,24 +4,47 @@
         {
             "label": "Build with Makefile",
             "type": "shell",
-            "command": "",
+            "command": "make",
             "args": [
-                "make",
-                "-B",
-                "--directory=${workspaceFolder}/cwaggle;"
+                "-B"
             ],
+            "options": {
+                "cwd": "${workspaceFolder}/cwaggle"
+            },
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
             "presentation": {
-                "reveal": "always"
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Clean Build",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "clean"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/cwaggle"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
             }
         },
         {
             "label": "Execute cwaggle_lasso",
             "type": "shell",
-            "command": "${workspaceFolder}/cwaggle/bin/cwaggle_lasso",
+            "command": "./cwaggle_lasso",
             "options": {
                 "cwd": "${workspaceFolder}/cwaggle/bin"
             },
@@ -30,9 +53,23 @@
                 "isDefault": true
             },
             "presentation": {
-                "reveal": "always"
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
             },
             "problemMatcher": []
+        },
+        {
+            "label": "Build and Run",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build with Makefile",
+                "Execute cwaggle_lasso"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always"
+            }
         }
     ]
 }

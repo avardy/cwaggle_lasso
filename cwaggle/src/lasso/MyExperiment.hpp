@@ -14,7 +14,7 @@
 #include "MyEval.hpp"
 #include "Config.hpp"
 //#include "LassoController.hpp"
-#include "SimplifiedLassoController.hpp"
+#include "LassoController.hpp"
 #include "worlds.hpp"
 #include "SpeedManager.hpp"
 #include "DataLogger.hpp"
@@ -220,7 +220,7 @@ private:
         }
 
         for (auto e : m_world->getEntities("robot")) {
-            e.addComponent<CController>(make_shared<SimplifiedLassoController>(e, m_world, m_rng, m_config));
+            e.addComponent<CController>(make_shared<LassoController>(e, m_world, m_rng, m_config));
         }
     }
 };
