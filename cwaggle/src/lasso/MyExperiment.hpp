@@ -13,7 +13,8 @@
 
 #include "MyEval.hpp"
 #include "Config.hpp"
-#include "LassoController.hpp"
+//#include "LassoController.hpp"
+#include "SimplifiedLassoController.hpp"
 #include "worlds.hpp"
 #include "SpeedManager.hpp"
 #include "DataLogger.hpp"
@@ -33,7 +34,8 @@ class MyExperiment {
     ofstream m_statsStream, m_robotPoseStream, m_robotStateStream, m_puckPositionStream;
 
     stringstream m_status;
-    double m_eval, m_propSlowed, m_cumPropSlowed = 0;
+    double m_eval;
+    LassoEval::SGFCounts m_counts;
 
     default_random_engine m_rng;
     bool m_aborted;
@@ -58,7 +60,7 @@ public:
     void doSimulationStep()
     {
         if (m_config.writeDataSkip && m_speedManager.getStepCount() % m_config.writeDataSkip == 0)
-            m_dataLogger.writeToFile(m_sim->getWorld(), m_speedManager.getStepCount(), m_eval, m_propSlowed, m_cumPropSlowed);
+            m_dataLogger.writeToFile(m_sim->getWorld(), m_speedManager.getStepCount(), m_eval, m_counts);
 
         m_speedManager.incrementStepCount();
 
@@ -87,13 +89,14 @@ public:
             //m_eval = LassoEval::PuckGridValues(m_world, "red_puck", 2, false);
             if (m_config.numPucks > 0)
                 m_eval = LassoEval::PuckSSDFromIdealPosition(m_world, "red_puck", Vec2{m_config.goalX, m_config.goalY});
-            m_propSlowed = LassoEval::ProportionSlowedRobots(m_world);
-            m_cumPropSlowed += m_propSlowed;
+            //m_propSlowed = LassoEval::ProportionSlowedRobots(m_world);            
             if (isnan(m_eval)) {
                 cerr << "nan evaluation encountered!\n";
                 m_aborted = true;
                 break;
             }
+
+            m_counts = LassoEval::getSGFCounts(m_world);
 
             m_simTimer.start();
             for (size_t i = 0; i < m_speedManager.getRenderSteps(); i++) {
@@ -112,8 +115,9 @@ public:
                 }
                 m_status << endl;
                 m_status << "Eval: " << m_eval << endl;
-                m_status << "Prop Slowed: " << m_propSlowed << endl;
-                m_status << "Cum Prop Slowed: " << m_cumPropSlowed << endl;
+                m_status << "Num. Solo: " << m_counts.numSolo << endl;
+                m_status << "Num. Grupo: " << m_counts.numGrupo << endl;
+                m_status << "Num. Fermo: " << m_counts.numFermo << endl;
 
                 for (auto robot : m_sim->getWorld()->getEntities("robot"))
                 {
@@ -216,7 +220,7 @@ private:
         }
 
         for (auto e : m_world->getEntities("robot")) {
-            e.addComponent<CController>(make_shared<LassoController>(e, m_world, m_rng, m_config));
+            e.addComponent<CController>(make_shared<SimplifiedLassoController>(e, m_world, m_rng, m_config));
         }
     }
 };

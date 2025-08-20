@@ -32,6 +32,7 @@ public:
     }
 };
 
+// These states were an attempt at judging task completion.
 enum class State {NORMAL, SATISFIED, AT_BORDER, STOPPED};
 
 ostream& operator<< (ostream& out, State& state)

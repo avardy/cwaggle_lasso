@@ -3,6 +3,7 @@
 #include "World.hpp"
 #include "Entity.hpp"
 #include "Components.hpp"
+#include "SimplifiedLassoController.hpp"
 
 namespace LassoEval
 {
@@ -173,5 +174,43 @@ namespace LassoEval
         }
         
         return n / total;
+    }
+
+
+    // The function below returns the number of solo, grupo, or fermo robots 
+    // according to the SGF model of Hamann and Reina:
+    // 
+    // Heiko Hamann and Andreagiovanni Reina. Scalability in computing and
+    // robotics. IEEE Transactions on Computers, 71(6):1453–1465, 2021.
+
+    struct SGFCounts {
+        int numSolo;
+        int numGrupo;
+        int numFermo;
+    };
+
+    SGFCounts getSGFCounts(std::shared_ptr<World> world)
+    {
+        SGFCounts counts{0, 0, 0};
+
+        int total = 0;
+        for (auto& robot : world->getEntities("robot")) {
+            // Ugly!
+            std::shared_ptr<SimplifiedLassoController> lassoCtrl = std::dynamic_pointer_cast<SimplifiedLassoController>(robot.getComponent<CController>().controller);
+
+            int sgf = lassoCtrl->getSGFstate();
+            if (sgf == 0)
+                ++counts.numSolo;
+            else if (sgf == 1)
+                ++counts.numGrupo;
+            else if (sgf == 2)
+                ++counts.numFermo;
+
+            ++total;
+        }
+        if (counts.numSolo + counts.numGrupo + counts.numFermo != total)
+            throw runtime_error("getSGFCounts: Incorrect count!");
+
+        return counts;
     }
 }

@@ -80,13 +80,11 @@ src/lasso/main.o: src/lasso/main.cpp include/CWaggle.h include/Vec2.hpp \
   include/EntityManager.hpp include/Simulator.hpp include/GUI.hpp \
   include/SensorTools.hpp include/Sensors.hpp \
   include/KeyboardCallback.hpp src/lasso/MyExperiment.hpp \
-  src/lasso/MyEval.hpp src/lasso/Config.hpp \
-  src/lasso/LassoController.hpp include/EntityControllers.hpp \
-  include/EntityAction.hpp src/lasso/TrackedSensor.hpp \
-  src/utils/Angles.h src/utils/Intersect.h src/lasso/DigitalFilters.h \
-  src/lasso/CircularDelay.hpp src/lasso/worlds.hpp \
-  include/WorldUtils.hpp src/lasso/SpeedManager.hpp \
-  src/lasso/DataLogger.hpp
+  src/lasso/MyEval.hpp src/lasso/SimplifiedLassoController.hpp \
+  include/EntityControllers.hpp include/EntityAction.hpp \
+  src/lasso/TrackedSensor.hpp src/lasso/Config.hpp src/utils/Angles.h \
+  src/utils/Intersect.h src/lasso/worlds.hpp include/WorldUtils.hpp \
+  src/lasso/SpeedManager.hpp src/lasso/DataLogger.hpp
 include/CWaggle.h:
 include/Vec2.hpp:
 include/Entity.hpp:
@@ -179,15 +177,13 @@ include/Sensors.hpp:
 include/KeyboardCallback.hpp:
 src/lasso/MyExperiment.hpp:
 src/lasso/MyEval.hpp:
-src/lasso/Config.hpp:
-src/lasso/LassoController.hpp:
+src/lasso/SimplifiedLassoController.hpp:
 include/EntityControllers.hpp:
 include/EntityAction.hpp:
 src/lasso/TrackedSensor.hpp:
+src/lasso/Config.hpp:
 src/utils/Angles.h:
 src/utils/Intersect.h:
-src/lasso/DigitalFilters.h:
-src/lasso/CircularDelay.hpp:
 src/lasso/worlds.hpp:
 include/WorldUtils.hpp:
 src/lasso/SpeedManager.hpp:

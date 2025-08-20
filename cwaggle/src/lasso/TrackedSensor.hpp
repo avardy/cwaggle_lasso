@@ -2,6 +2,7 @@
 
 #include <float.h>
 
+#include "Config.hpp"
 #include "World.hpp"
 #include "Entity.hpp"
 #include "Angles.h"

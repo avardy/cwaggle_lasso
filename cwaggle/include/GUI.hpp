@@ -281,18 +281,18 @@ private:
                 s.shape.setPosition((float)t.p.x, (float)t.p.y);
                 s.shape.setFillColor(sf::Color(c.r, c.g, c.b, c.a));
 
-                if (e.hasComponent<CSteer>()) {
-                    auto& steer = e.getComponent<CSteer>();
-                    if (steer.frozen)
-                        s.shape.setFillColor(sf::Color(50, 50, 50));
-                    else if (steer.slowedCount > 0) {
-                        s.shape.setFillColor(sf::Color(255, 0, 255));
-                    } else {
-                        // A normal robot
-                        //s.shape.setOutlineColor(sf::Color(255, 0, 0, 255));
-                        //s.shape.setOutlineThickness(1);
-                    }
-                }
+                // if (e.hasComponent<CSteer>()) {
+                //     auto& steer = e.getComponent<CSteer>();
+                //     if (steer.frozen)
+                //         s.shape.setFillColor(sf::Color(50, 50, 50));
+                //     else if (steer.slowedCount > 0) {
+                //         s.shape.setFillColor(sf::Color(255, 0, 255));
+                //     } else {
+                //         // A normal robot
+                //         //s.shape.setOutlineColor(sf::Color(255, 0, 0, 255));
+                //         //s.shape.setOutlineThickness(1);
+                //     }
+                // }
 
                 m_window.draw(s.shape);
 

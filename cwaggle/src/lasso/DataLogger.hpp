@@ -12,7 +12,8 @@
 #include "CWaggle.h"
 
 #include "Config.hpp"
-#include "LassoController.hpp"
+//#include "LassoController.hpp"
+#include "SimplifiedLassoController.hpp"
 
 using namespace std;
 
@@ -45,31 +46,21 @@ public:
         }
     }
 
-    void writeToFile(shared_ptr<World> world, double stepCount, double eval, double propSlowed, double cumPropSlowed)
+    void writeToFile(shared_ptr<World> world, double stepCount, double eval, LassoEval::SGFCounts counts)
     {
-        // Compute the average tau and filtered tau values for all robots.
-        double avgTau = 0;
-        double avgMedianTau = 0;
-        double avgFilteredTau = 0;
-        double avgState = 0;
-        double n = 0;
-        for (auto& robot : world->getEntities("robot")) {
-            // Ugly!
-            std::shared_ptr<LassoController> lassoCtrl = std::dynamic_pointer_cast<LassoController>(robot.getComponent<CController>().controller);
-            avgTau += lassoCtrl->m_tau;
-            avgMedianTau += lassoCtrl->m_medianTau;
-            avgFilteredTau += lassoCtrl->m_filteredTau;
-            avgState += lassoCtrl->getStateAsInt();
-            ++n;
-        }
-        if (n > 0) {
-            avgTau /= n;
-            avgMedianTau /= n;
-            avgFilteredTau /= n;
-            avgState /= n;
-        }
+        // double avgTau = 0;
+        // double n = 0;
+        // for (auto& robot : world->getEntities("robot")) {
+        //     // Ugly!
+        //     std::shared_ptr<SimplifiedLassoController> lassoCtrl = std::dynamic_pointer_cast<SimplifiedLassoController>(robot.getComponent<CController>().controller);
+        //     avgTau += lassoCtrl->m_tau;
+        //     ++n;
+        // }
+        // if (n > 0) {
+        //     avgTau /= n;
+        // }
 
-        m_statsStream << stepCount << " " << eval << " " << propSlowed << " " << cumPropSlowed << " " << avgTau << " " << avgMedianTau << " " << avgFilteredTau << " " << avgState << "\n";
+        m_statsStream << stepCount << " " << eval << " " << counts.numSolo << " " << counts.numGrupo << " " << counts.numFermo << " " << "\n"; // << avgTau << " " << "\n";
         m_statsStream.flush();
 
         m_robotPoseStream << stepCount;
@@ -77,9 +68,9 @@ public:
         for (auto& robot : world->getEntities("robot")) {
             Vec2& pos = robot.getComponent<CTransform>().p;
             CSteer& steer = robot.getComponent<CSteer>();
-            std::shared_ptr<LassoController> lassoCtrl = std::dynamic_pointer_cast<LassoController>(robot.getComponent<CController>().controller);
+            std::shared_ptr<SimplifiedLassoController> lassoCtrl = std::dynamic_pointer_cast<SimplifiedLassoController>(robot.getComponent<CController>().controller);
             m_robotPoseStream << " " << (int)pos.x << " " << (int)pos.y << " " << ((int)(1000 * steer.angle)) / 1000.0; // Rounding angle to 3 decimals
-            m_robotStateStream << " " << lassoCtrl->getStateAsInt();
+            m_robotStateStream << " " << lassoCtrl->getSGFstate();
         }
         m_robotPoseStream << "\n";
         m_robotStateStream << "\n";

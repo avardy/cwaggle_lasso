@@ -4,7 +4,7 @@ robotRadius    30
 plowLength     60
 plowAngleDeg   -35
 puckRadius     22
-numRobots      16
+numRobots      8
 numPucks       20
 gui            1
 renderSteps     10
@@ -14,7 +14,7 @@ goalY           245
 writeDataSkip  10
 dataFilenameBase   ../../data/_
 numTrials		1
-startTrialIndex 44
+startTrialIndex 0
 controllerSkip  2
 arenaConfig     sim_stadium_one_wall
 captureScreenshots    0
