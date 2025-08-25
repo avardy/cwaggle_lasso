@@ -4,6 +4,10 @@
             "name": "Mac",
             "includePath": [
                 "${default}",
+                "${workspaceFolder}/cwaggle/include",
+                "${workspaceFolder}/cwaggle/src/utils",
+                "${workspaceFolder}/cwaggle/src/lasso",
+                "/opt/homebrew/opt/sfml@2/include",
                 "${workspaceFolder}/**"
             ],
             "defines": [],

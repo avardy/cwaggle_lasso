@@ -13,11 +13,11 @@
 
 #include "MyEval.hpp"
 #include "Config.hpp"
-//#include "LassoController.hpp"
 #include "LassoController.hpp"
 #include "worlds.hpp"
 #include "SpeedManager.hpp"
 #include "DataLogger.hpp"
+#include "SGFTracker.hpp"
 
 using namespace std;
 
@@ -35,7 +35,7 @@ class MyExperiment {
 
     stringstream m_status;
     double m_eval;
-    LassoEval::SGFCounts m_counts;
+    LassoEval::Triple m_counts;
 
     default_random_engine m_rng;
     bool m_aborted;
@@ -43,9 +43,10 @@ class MyExperiment {
 
     SpeedManager m_speedManager;
     DataLogger m_dataLogger;
+    SGFTracker& m_tracker;
 
 public:
-    MyExperiment(Config config, int trialIndex, int rngSeed, bool waitAfterCompletion = false)
+    MyExperiment(Config config, int trialIndex, int rngSeed, SGFTracker &tracker, bool waitAfterCompletion = false)
         : m_config(config)
         , m_trialIndex(trialIndex)
         , m_rng(rngSeed)
@@ -53,6 +54,7 @@ public:
         , m_waitAfterCompletion(waitAfterCompletion)
         , m_speedManager(config)
         , m_dataLogger(config, trialIndex)
+        , m_tracker(tracker)
     {
         resetSimulator();
     }
@@ -80,6 +82,9 @@ public:
 
         if (m_speedManager.getSimTimeStep() > 0)
             m_sim->update(m_speedManager.getSimTimeStep());
+
+        m_counts = LassoEval::getSGFCounts(m_world);
+        m_tracker.update(m_world, m_counts, m_speedManager.getStepCount());
     }
 
     void run()
@@ -96,14 +101,13 @@ public:
                 break;
             }
 
-            m_counts = LassoEval::getSGFCounts(m_world);
-
             m_simTimer.start();
             for (size_t i = 0; i < m_speedManager.getRenderSteps(); i++) {
+                doSimulationStep();
                 if (m_config.maxTimeSteps > 0 && m_speedManager.getStepCount() >= m_config.maxTimeSteps) {
                     running = false;
+                    break;
                 }
-                doSimulationStep();
             }
             m_simulationTime += m_simTimer.getElapsedTimeInMilliSec();
 
@@ -115,9 +119,9 @@ public:
                 }
                 m_status << endl;
                 m_status << "Eval: " << m_eval << endl;
-                m_status << "Num. Solo: " << m_counts.numSolo << endl;
-                m_status << "Num. Grupo: " << m_counts.numGrupo << endl;
-                m_status << "Num. Fermo: " << m_counts.numFermo << endl;
+                m_status << "Num. Solo: " << m_counts.s << endl;
+                m_status << "Num. Grupo: " << m_counts.g << endl;
+                m_status << "Num. Fermo: " << m_counts.f << endl;
 
                 for (auto robot : m_sim->getWorld()->getEntities("robot"))
                 {
@@ -156,7 +160,6 @@ public:
 
                 m_gui->setStatus(m_status.str());
 
-                // draw gui
                 m_gui->update();
 
                 if (m_config.captureScreenshots) {

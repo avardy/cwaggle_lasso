@@ -58,18 +58,6 @@
                 "clear": true
             },
             "problemMatcher": []
-        },
-        {
-            "label": "Build and Run",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "Build with Makefile",
-                "Execute cwaggle_lasso"
-            ],
-            "group": "test",
-            "presentation": {
-                "reveal": "always"
-            }
         }
     ]
 }

@@ -20,7 +20,6 @@ class GUI {
     bool m_debug = false;
     bool m_sensors = false;
     bool m_drawLines = true, m_drawCircles = true;
-//    size_t m_controlsHeight = 150;
     size_t m_controlsHeight = 120;
     size_t m_windowWidth;
     size_t m_windowHeight;
@@ -120,9 +119,6 @@ private:
                     break;
                 case sf::Keyboard::L:
                     m_drawLines = !m_drawLines;
-                    break;
-                case sf::Keyboard::O:
-                    //m_backgroundImagePtr = &m_occupancyImage;
                     break;
                 case sf::Keyboard::Num0:
                     m_backgroundImages[0].second = !m_backgroundImages[0].second;
@@ -460,11 +456,21 @@ private:
         rect.setFillColor(sf::Color(100, 100, 100, 255));
         m_window.draw(rect);
 
+        // Draw a brief summary of keyboard/mouse commands
+        sf::Text helpText;
+        helpText.setFont(m_font);
+        helpText.setCharacterSize(10);
+        helpText.setFillColor(sf::Color::Blue);
+        std::string helpString = "ESC: Exit  D: Debug  S: Sensors  C: Circles  L: Lines\n0-5: Grid Layers  A: Select All  N: Deselect  Arrows: Rotate\nMouse: Left-click+drag: Move entities  Right-click: Select/deselect robots";
+        helpText.setString(helpString);
+        helpText.setPosition((float)m_sim->getWorld()->width()/2, (float)m_sim->getWorld()->height());
+        m_window.draw(helpText);
+
         // Draw the status text
         sf::Text text;
         text.setFont(m_font);
         text.setString(m_status);
-        text.setCharacterSize(12);
+        text.setCharacterSize(10);
         text.setPosition(5, (float)m_sim->getWorld()->height());// + text.getLocalBounds().height);
         m_window.draw(text);
 

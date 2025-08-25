@@ -84,7 +84,8 @@ src/lasso/main.o: src/lasso/main.cpp include/CWaggle.h include/Vec2.hpp \
   include/EntityControllers.hpp include/EntityAction.hpp \
   src/lasso/TrackedSensor.hpp src/lasso/Config.hpp src/utils/Angles.h \
   src/utils/Intersect.h src/lasso/worlds.hpp include/WorldUtils.hpp \
-  src/lasso/SpeedManager.hpp src/lasso/DataLogger.hpp
+  src/lasso/SpeedManager.hpp src/lasso/DataLogger.hpp \
+  src/lasso/SGFTracker.hpp
 include/CWaggle.h:
 include/Vec2.hpp:
 include/Entity.hpp:
@@ -188,3 +189,4 @@ src/lasso/worlds.hpp:
 include/WorldUtils.hpp:
 src/lasso/SpeedManager.hpp:
 src/lasso/DataLogger.hpp:
+src/lasso/SGFTracker.hpp:

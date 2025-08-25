@@ -99,13 +99,16 @@ public:
         m_robotPos = m_robot.getComponent<CTransform>().p;
         SensorTools::ReadSensorArray(m_robot, m_world, m_reading);
 
-            computeTau();
+        // Compute tau, defining the isoline of the scalar field to follow.
+        computeTau();
 
-            m_v = 0;
-            m_w = 0;
-            computeSpeeds();
-            slowOrStop();
-            escapeIfStuck();
+        // Try and follow the isoline, but slow/stop if another robot is ahead,
+        // and try a random movement if we appear to be stuck.
+        m_v = 0;
+        m_w = 0;
+        computeSpeeds();
+        slowOrStop();
+        escapeIfStuck();
 
         if (m_escapeCountdown > 0)
             --m_escapeCountdown;
@@ -169,10 +172,11 @@ public:
         // To interpret as "fermo" we rely on the simulator itself, which sets
         // "slowedCount" to a non-zero value if the robot has hit another robot
         // or the border.
+
         auto & steer = m_robot.getComponent<CSteer>();
-        if (steer.slowedCount > 0)
+        if (m_reading.robotAheadClose) //steer.slowedCount > 0)
             return 2;
-        else if (m_slow || m_stop)
+        else if (m_reading.robotAheadFar)
             return 1;
         else
             return 0;
@@ -201,8 +205,6 @@ private:
             double dy = target.y - m_robotPos.y;
             double alpha = Angles::getSmallestSignedAngularDifference(atan2(dy, dx), robotAngle);
 
-            // v = 1;
-            // w = alpha / M_PI;
             m_v = pow(cos(alpha), 3);
             m_w = pow(sin(alpha), 3);
         } else {

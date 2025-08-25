@@ -46,7 +46,7 @@ public:
         }
     }
 
-    void writeToFile(shared_ptr<World> world, double stepCount, double eval, LassoEval::SGFCounts counts)
+    void writeToFile(shared_ptr<World> world, double stepCount, double eval, LassoEval::Triple counts)
     {
         // double avgTau = 0;
         // double n = 0;
@@ -60,7 +60,7 @@ public:
         //     avgTau /= n;
         // }
 
-        m_statsStream << stepCount << " " << eval << " " << counts.numSolo << " " << counts.numGrupo << " " << counts.numFermo << " " << "\n"; // << avgTau << " " << "\n";
+        m_statsStream << stepCount << " " << eval << " " << counts.s << " " << counts.g << " " << counts.f << " " << "\n"; // << avgTau << " " << "\n";
         m_statsStream.flush();
 
         m_robotPoseStream << stepCount;

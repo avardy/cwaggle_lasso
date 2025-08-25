@@ -11,18 +11,21 @@
 
 #include "CWaggle.h"
 #include "MyExperiment.hpp"
+#include "SGFTracker.hpp"
 
 using namespace std;
 
 double singleExperiment(Config config, bool waitAfterCompletion = false)
 {
+    SGFTracker tracker(config);
+
     double avgEval = 0;
     for (int i = config.startTrialIndex; i < config.startTrialIndex + config.numTrials; i++) {
         cerr << "Trial: " << i << "\n";
 
         // We use i + 1 for the RNG seed because seeds of 0 and 1 seem to generate the
         // same result.
-        MyExperiment exp(config, i, i + 1, waitAfterCompletion);
+        MyExperiment exp(config, i, i + 1, tracker, waitAfterCompletion);
         exp.run();
         if (exp.wasAborted())
             cerr << "Trial aborted." << "\n";

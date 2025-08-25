@@ -183,15 +183,25 @@ namespace LassoEval
     // Heiko Hamann and Andreagiovanni Reina. Scalability in computing and
     // robotics. IEEE Transactions on Computers, 71(6):1453–1465, 2021.
 
-    struct SGFCounts {
-        int numSolo;
-        int numGrupo;
-        int numFermo;
+    struct Triple {
+        int s;
+        int g;
+        int f;
+        
+        bool operator==(const Triple& other) const {
+            return s == other.s && 
+                   g == other.g && 
+                   f == other.f;
+        }
+        
+        bool operator!=(const Triple& other) const {
+            return !(*this == other);
+        }
     };
 
-    SGFCounts getSGFCounts(std::shared_ptr<World> world)
+    Triple getSGFCounts(std::shared_ptr<World> world)
     {
-        SGFCounts counts{0, 0, 0};
+        Triple counts{0, 0, 0};
 
         int total = 0;
         for (auto& robot : world->getEntities("robot")) {
@@ -200,15 +210,15 @@ namespace LassoEval
 
             int sgf = lassoCtrl->getSGFstate();
             if (sgf == 0)
-                ++counts.numSolo;
+                ++counts.s;
             else if (sgf == 1)
-                ++counts.numGrupo;
+                ++counts.g;
             else if (sgf == 2)
-                ++counts.numFermo;
+                ++counts.f;
 
             ++total;
         }
-        if (counts.numSolo + counts.numGrupo + counts.numFermo != total)
+        if (counts.s + counts.g + counts.f != total)
             throw runtime_error("getSGFCounts: Incorrect count!");
 
         return counts;
