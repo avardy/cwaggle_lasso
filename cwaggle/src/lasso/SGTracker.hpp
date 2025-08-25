@@ -1,10 +1,7 @@
 #pragma once
 
-// SGFTracker tracks the number of solo, grupo, or fermo robots 
-// according to the SGF model of Hamann and Reina:
-// 
-// Heiko Hamann and Andreagiovanni Reina. Scalability in computing and
-// robotics. IEEE Transactions on Computers, 71(6):1453–1465, 2021.
+// SGTracker tracks the number of solo and grupo robots only
+// (excluding fermo robots from the SGF model)
 
 #include "Tracker.hpp"
 #include "World.hpp"
@@ -15,25 +12,22 @@
 
 using std::vector;
 
-struct Triple {
+struct Pair {
     int s;
     int g;
-    int f;
     
-    bool operator==(const Triple& other) const {
-        return s == other.s && 
-               g == other.g && 
-               f == other.f;
+    bool operator==(const Pair& other) const {
+        return s == other.s && g == other.g;
     }
     
-    bool operator!=(const Triple& other) const {
+    bool operator!=(const Pair& other) const {
         return !(*this == other);
     }
 };
 
-Triple getSGFCounts(std::shared_ptr<World> world)
+Pair getSGCounts(std::shared_ptr<World> world)
 {
-    Triple counts{0, 0, 0};
+    Pair counts{0, 0};
 
     int total = 0;
     for (auto& robot : world->getEntities("robot")) {
@@ -45,87 +39,83 @@ Triple getSGFCounts(std::shared_ptr<World> world)
             ++counts.s;
         else if (sgf == 1)
             ++counts.g;
-        else if (sgf == 2)
-            ++counts.f;
+        // Note: we ignore fermo robots (sgf == 2)
 
         ++total;
     }
-    if (counts.s + counts.g + counts.f != total)
-        throw runtime_error("getSGFCounts: Incorrect count!");
-
+    // Total includes fermo robots, but we only track solo + grupo
     return counts;
 }
 
-vector<Triple> generateAllTriples(int n) {
-    vector<Triple> triples;
+vector<Pair> generateAllPairs(int n) {
+    vector<Pair> pairs;
 
-    // Many orderings are possible. This is just the one that I first wrote
-    // down on paper.
-    for (int f = 0; f <= n; ++f) {
-        for (int s = n - f; s >= 0; --s) {
-            int g = n - s - f;
-            triples.push_back(Triple{s, g, f});
+    // Generate all possible (solo, grupo) combinations where solo + grupo <= n
+    // The rest are assumed to be fermo robots
+    for (int s = 0; s <= n; ++s) {
+        for (int g = 0; g <= n - s; ++g) {
+            pairs.push_back(Pair{s, g});
         }
     }
-    return triples;
+    return pairs;
 }
 
-class SGFTracker : public Tracker {
+class SGTracker : public Tracker {
 private:
     Config m_config;
     bool m_readyToTrack;
-    Triple m_counts, m_lastCounts;
+    Pair m_counts, m_lastCounts;
     int m_lastChangeTime;
 
-    // Vector of all possible triples.
-    vector<Triple> m_triples;
+    // Vector of all possible pairs.
+    vector<Pair> m_pairs;
 
-    // Matrix of uncensored (i.e. normal) transition durations. Indexeed by the
-    // index of the "from" triple, then by the index of the "to" triple. Each
+    // Matrix of uncensored (i.e. normal) transition durations. Indexed by the
+    // index of the "from" pair, then by the index of the "to" pair. Each
     // cell is then the vector of raw durations.
     vector<vector<vector<int>>> m_uncensoredDurations;
 
     // Vector of censored transition durations. Indexed by the index of the
-    // "from" triple. There is no "to" triple for these. Each cell is the vector
+    // "from" pair. There is no "to" pair for these. Each cell is the vector
     // of raw durations.
     vector<vector<int>> m_censoredDurations;
 
 public:
-    SGFTracker(Config config)
+    SGTracker(Config config)
         : m_config(config)
         , m_readyToTrack(false)
     {
-        m_triples = generateAllTriples(config.numRobots);
+        m_pairs = generateAllPairs(config.numRobots);
     
-        int T = m_triples.size();
+        int T = m_pairs.size();
         m_uncensoredDurations = vector<vector<vector<int>>>(T, vector<vector<int>>(T, vector<int>()));
         m_censoredDurations = vector<vector<int>>(T, vector<int>());
     }
 
-    virtual ~SGFTracker() override {
-        // Write triples key file (CSV format for pandas)
-        std::ofstream triplesFile("sgf_triples.csv");
-        if (triplesFile.is_open()) {
-            triplesFile << "index,solo,grupo,fermo\n";
-            for (size_t i = 0; i < m_triples.size(); ++i) {
-                triplesFile << i << "," << m_triples[i].s << "," 
-                           << m_triples[i].g << "," << m_triples[i].f << "\n";
+    virtual ~SGTracker() override {
+        // Write pairs key file (CSV format for pandas)
+        std::ofstream pairsFile("sg_pairs.csv");
+        if (pairsFile.is_open()) {
+            pairsFile << "index,solo,grupo\n";
+            for (size_t i = 0; i < m_pairs.size(); ++i) {
+                pairsFile << i << "," << m_pairs[i].s << "," 
+                         << m_pairs[i].g << "\n";
             }
-            triplesFile.close();
+            pairsFile.close();
         }
 
         // Write survival analysis data (CSV format for pandas)
-        std::ofstream survivalFile("sgf_survival_data.csv");
+        std::ofstream survivalFile("sg_survival_data.csv");
         if (survivalFile.is_open()) {
-            survivalFile << "from_index,to_index,duration,censored,from_solo,from_grupo,from_fermo,to_solo,to_grupo,to_fermo\n";
+            survivalFile << "from_index,to_index,duration,censored,from_solo,from_grupo,to_solo,to_grupo\n";
             
             // Export all uncensored durations
             for (size_t i = 0; i < m_uncensoredDurations.size(); ++i) {
                 for (size_t j = 0; j < m_uncensoredDurations[i].size(); ++j) {
                     for (int duration : m_uncensoredDurations[i][j]) {
                         survivalFile << i << "," << j << "," << duration << ",0,"
-                                   << m_triples[i].s << "," << m_triples[i].g << "," << m_triples[i].f << ","
-                                   << m_triples[j].s << "," << m_triples[j].g << "," << m_triples[j].f << "\n";
+                                   << m_pairs[i].s << "," << m_pairs[i].g << ","
+                                   << m_pairs[j].s << "," << m_pairs[j].g << "\n";
                     }
                 }
             }
@@ -134,8 +124,8 @@ public:
             for (size_t i = 0; i < m_censoredDurations.size(); ++i) {
                 for (int duration : m_censoredDurations[i]) {
                     survivalFile << i << ",-1," << duration << ",1,"
-                               << m_triples[i].s << "," << m_triples[i].g << "," << m_triples[i].f
-                               << ",-1,-1,-1\n";
+                               << m_pairs[i].s << "," << m_pairs[i].g
+                               << ",-1,-1\n";
                 }
             }
             
@@ -144,19 +134,20 @@ public:
 
         // Write human-readable summary
         std::ostringstream summaryContent;
-        summaryContent << "SGF Transition Analysis Summary\n";
+        summaryContent << "SG Transition Analysis Summary\n";
         summaryContent << "==============================\n\n";
         
         summaryContent << "Number of robots: " << m_config.numRobots << "\n";
-        summaryContent << "Total possible states: " << m_triples.size() << "\n\n";
+        summaryContent << "Total possible states: " << m_pairs.size() << "\n\n";
         
-        summaryContent << "State Definitions (Solo, Grupo, Fermo):\n";
-        summaryContent << "--------------------------------------\n";
-        for (size_t i = 0; i < m_triples.size(); ++i) {
+        summaryContent << "State Definitions (Solo, Grupo):\n";
+        summaryContent << "--------------------------------\n";
+        for (size_t i = 0; i < m_pairs.size(); ++i) {
+            int fermo = m_config.numRobots - m_pairs[i].s - m_pairs[i].g;
             summaryContent << std::setw(3) << i << ": (" 
-                          << std::setw(2) << m_triples[i].s << ", "
-                          << std::setw(2) << m_triples[i].g << ", "
-                          << std::setw(2) << m_triples[i].f << ")\n";
+                          << std::setw(2) << m_pairs[i].s << ", "
+                          << std::setw(2) << m_pairs[i].g << ") "
+                          << "[" << fermo << " fermo]\n";
         }
         
         summaryContent << "\nTransition Statistics:\n";
@@ -182,7 +173,7 @@ public:
         std::cout << "\n" << summaryContent.str() << std::endl;
         
         // Write to file
-        std::ofstream summaryFile("sgf_transition_summary.txt");
+        std::ofstream summaryFile("sg_transition_summary.txt");
         if (summaryFile.is_open()) {
             summaryFile << summaryContent.str();
             summaryFile.close();
@@ -191,7 +182,7 @@ public:
 
     virtual void update(shared_ptr<World> world, int time) override
     {
-        m_counts = getSGFCounts(world);
+        m_counts = getSGCounts(world);
         bool endOfTrial = (time == m_config.maxTimeSteps);
 
         if (!m_readyToTrack) {
@@ -202,7 +193,7 @@ public:
         }
 
         if (m_counts != m_lastCounts || endOfTrial) {
-            // SGF counts have changed, or else it is the end of the trial
+            // SG counts have changed, or else it is the end of the trial
             int elapsed = time - m_lastChangeTime;
             if (elapsed <= 0) {
                 // Log warning or handle edge case
@@ -222,29 +213,31 @@ public:
     }
 
     virtual string getStatusString() override {
+        int fermo = m_config.numRobots - m_counts.s - m_counts.g;
         return "Num. Solo: " + to_string(m_counts.s) + "\n"
             "Num. Grupo: " + to_string(m_counts.g) + "\n"
-            "Num. Fermo: " + to_string(m_counts.f);
+            "Num. Fermo: " + to_string(fermo) + " (inferred)";
     }
 
 private:
     void actualUpdate(int elapsed, bool endOfTrial) {
 
-        int fromIndex = getTripleIndex(m_lastCounts);
+        int fromIndex = getPairIndex(m_lastCounts);
 
         if (endOfTrial) {
             // There is no "toIndex" here because this event is censored.
             m_censoredDurations[fromIndex].push_back(elapsed);
         } else {
-            int toIndex = getTripleIndex(m_counts);
+            int toIndex = getPairIndex(m_counts);
             m_uncensoredDurations[fromIndex][toIndex].push_back(elapsed);
         }
     }
-    int getTripleIndex(const Triple& triple) const {
-        auto it = std::find(m_triples.begin(), m_triples.end(), triple);
-        if (it == m_triples.end()) {
-            throw std::runtime_error("Triple not found in m_triples");
+
+    int getPairIndex(const Pair& pair) const {
+        auto it = std::find(m_pairs.begin(), m_pairs.end(), pair);
+        if (it == m_pairs.end()) {
+            throw std::runtime_error("Pair not found in m_pairs");
         }
-        return std::distance(m_triples.begin(), it);
+        return std::distance(m_pairs.begin(), it);
     }
 };

@@ -8,7 +8,7 @@ numRobots      12
 numPucks       20
 gui            1
 renderSteps     100
-maxTimeSteps   15000
+maxTimeSteps   150
 goalX           310
 goalY           245
 writeDataSkip  10
@@ -28,3 +28,4 @@ controllerBlindness     0
 escapeDuration  10
 arenaSweep      0
 paramSweep      0
+trackingMode 1

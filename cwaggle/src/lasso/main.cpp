@@ -12,13 +12,13 @@
 #include "CWaggle.h"
 #include "MyExperiment.hpp"
 #include "SGFTracker.hpp"
+#include "SGTracker.hpp"
+#include "NullTracker.hpp"
 
 using namespace std;
 
-double singleExperiment(Config config, bool waitAfterCompletion = false)
+double runExperimentWithTracker(Config config, Tracker& tracker, bool waitAfterCompletion = false)
 {
-    SGFTracker tracker(config);
-
     double avgEval = 0;
     for (int i = config.startTrialIndex; i < config.startTrialIndex + config.numTrials; i++) {
         cerr << "Trial: " << i << "\n";
@@ -36,6 +36,48 @@ double singleExperiment(Config config, bool waitAfterCompletion = false)
     cout << "\t" << avgEval / config.numTrials << "\n";
 
     return avgEval / config.numTrials;
+}
+
+double singleExperiment(Config config, bool waitAfterCompletion = false)
+{
+    double avgEval = 0;
+
+    // Create tracker based on trackingMode
+    switch (config.trackingMode) {
+        case 0:
+            // No tracking
+            cerr << "Running with no tracking (NullTracker)...\n";
+            {
+                NullTracker nullTracker(config);
+                avgEval = runExperimentWithTracker(config, nullTracker, waitAfterCompletion);
+            }
+            break;
+        case 1:
+            // SG tracking only
+            cerr << "Running with SG Tracker...\n";
+            {
+                SGTracker sgTracker(config);
+                avgEval = runExperimentWithTracker(config, sgTracker, waitAfterCompletion);
+            }
+            break;
+        case 2:
+            // SGF tracking (default)
+            cerr << "Running with SGF Tracker...\n";
+            {
+                SGFTracker sgfTracker(config);
+                avgEval = runExperimentWithTracker(config, sgfTracker, waitAfterCompletion);
+            }
+            break;
+        default:
+            cerr << "Invalid tracking mode " << config.trackingMode << ", defaulting to SGF Tracker...\n";
+            {
+                SGFTracker sgfTracker(config);
+                avgEval = runExperimentWithTracker(config, sgfTracker, waitAfterCompletion);
+            }
+            break;
+    }
+
+    return avgEval;
 }
 
 void paramSweep(Config config, bool waitAfterCompletion = false)

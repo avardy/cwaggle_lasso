@@ -103,7 +103,7 @@ Transition Statistics:
 
 Event Summary:
 -------------
-Uncensored transition events: 17827
+Uncensored transition events: 119
 Censored events (right-censored): 10
-Total events recorded: 17837
-Censoring rate: 0.1%
+Total events recorded: 129
+Censoring rate: 7.8%

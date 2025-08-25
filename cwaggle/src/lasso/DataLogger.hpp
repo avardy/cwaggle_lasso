@@ -46,21 +46,9 @@ public:
         }
     }
 
-    void writeToFile(shared_ptr<World> world, double stepCount, double eval, LassoEval::Triple counts)
+    void writeToFile(shared_ptr<World> world, double stepCount, double eval)
     {
-        // double avgTau = 0;
-        // double n = 0;
-        // for (auto& robot : world->getEntities("robot")) {
-        //     // Ugly!
-        //     std::shared_ptr<LassoController> lassoCtrl = std::dynamic_pointer_cast<LassoController>(robot.getComponent<CController>().controller);
-        //     avgTau += lassoCtrl->m_tau;
-        //     ++n;
-        // }
-        // if (n > 0) {
-        //     avgTau /= n;
-        // }
-
-        m_statsStream << stepCount << " " << eval << " " << counts.s << " " << counts.g << " " << counts.f << " " << "\n"; // << avgTau << " " << "\n";
+        m_statsStream << stepCount << " " << eval << "\n"; //" " << counts.s << " " << counts.g << " " << counts.f << " " << "\n"; // << avgTau << " " << "\n";
         m_statsStream.flush();
 
         m_robotPoseStream << stepCount;
@@ -85,5 +73,4 @@ public:
         m_puckPositionStream << "\n";
         m_puckPositionStream.flush();
     }
-
 };

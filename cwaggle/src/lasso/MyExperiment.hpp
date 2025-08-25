@@ -1,5 +1,11 @@
 #pragma once
 
+#include "Timer.hpp"
+#include "SpeedManager.hpp"
+#include "DataLogger.hpp"
+#include "Tracker.hpp"
+
+using namespace std;
 #include <fstream>
 #include <functional>
 #include <memory>
@@ -17,7 +23,7 @@
 #include "worlds.hpp"
 #include "SpeedManager.hpp"
 #include "DataLogger.hpp"
-#include "SGFTracker.hpp"
+#include "Tracker.hpp"
 
 using namespace std;
 
@@ -35,7 +41,6 @@ class MyExperiment {
 
     stringstream m_status;
     double m_eval;
-    LassoEval::Triple m_counts;
 
     default_random_engine m_rng;
     bool m_aborted;
@@ -43,10 +48,10 @@ class MyExperiment {
 
     SpeedManager m_speedManager;
     DataLogger m_dataLogger;
-    SGFTracker& m_tracker;
+    Tracker& m_tracker;
 
 public:
-    MyExperiment(Config config, int trialIndex, int rngSeed, SGFTracker &tracker, bool waitAfterCompletion = false)
+    MyExperiment(Config config, int trialIndex, int rngSeed, Tracker &tracker, bool waitAfterCompletion = false)
         : m_config(config)
         , m_trialIndex(trialIndex)
         , m_rng(rngSeed)
@@ -62,7 +67,7 @@ public:
     void doSimulationStep()
     {
         if (m_config.writeDataSkip && m_speedManager.getStepCount() % m_config.writeDataSkip == 0)
-            m_dataLogger.writeToFile(m_sim->getWorld(), m_speedManager.getStepCount(), m_eval, m_counts);
+            m_dataLogger.writeToFile(m_sim->getWorld(), m_speedManager.getStepCount(), m_eval);
 
         m_speedManager.incrementStepCount();
 
@@ -83,8 +88,7 @@ public:
         if (m_speedManager.getSimTimeStep() > 0)
             m_sim->update(m_speedManager.getSimTimeStep());
 
-        m_counts = LassoEval::getSGFCounts(m_world);
-        m_tracker.update(m_world, m_counts, m_speedManager.getStepCount());
+        m_tracker.update(m_world, m_speedManager.getStepCount());
     }
 
     void run()
@@ -119,9 +123,7 @@ public:
                 }
                 m_status << endl;
                 m_status << "Eval: " << m_eval << endl;
-                m_status << "Num. Solo: " << m_counts.s << endl;
-                m_status << "Num. Grupo: " << m_counts.g << endl;
-                m_status << "Num. Fermo: " << m_counts.f << endl;
+                m_status << m_tracker.getStatusString() << endl;
 
                 for (auto robot : m_sim->getWorld()->getEntities("robot"))
                 {
